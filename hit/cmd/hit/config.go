@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"flag"
 	"errors"
     "strconv"
@@ -43,6 +44,10 @@ type config struct {
 
 func parseArgs(c *config, args []string) error {
 	fs :=flag.NewFlagSet("hit", flag.ContinueOnError)
+	fs.Usage = func() {
+		fmt.Fprintf(fs.Output(), "usage %s [options] url\n", fs.Name())
+		fs.PrintDefaults()
+	}
 	fs.StringVar(
 		&c.url,
 		"url",
@@ -61,6 +66,10 @@ func parseArgs(c *config, args []string) error {
 		"rps",
 		"Rate limit for requests per second (0 for no limit)",
 	)
-
-	return fs.Parse(args)
+    
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	c.url = fs.Arg(0)
+	return nil
 }
