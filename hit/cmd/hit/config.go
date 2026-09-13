@@ -2,8 +2,37 @@ package main
 
 import (
 	"flag"
+	"errors"
+    "strconv"
 )
 
+type positiveIntValue int
+
+func asPositiveIntValue(p *int) *positiveIntValue {
+    return (*positiveIntValue)(p) 
+}
+
+func (n *positiveIntValue) String() string {
+    return strconv.Itoa(int(*n)) 
+}
+
+func (n *positiveIntValue) Set(s string) error {
+    v, err := strconv.ParseInt( 
+        s,  
+        0, 
+        strconv.IntSize,  
+    )
+    if err != nil {
+        return err
+    }
+    if v <= 0 {
+        return errors.New("should be greater than zero")
+    }
+    *n = positiveIntValue(v) 
+
+	return nil
+
+}
 
 type config struct {
 	url string
@@ -20,22 +49,16 @@ func parseArgs(c *config, args []string) error {
 		"",
 		"HTTP serev 'URL' (required)",
 	)
-    fs.IntVar(
-		&c.n,
+    fs.Var(asPositiveIntValue(&c.n),
 		"n",
-		1,
 		"Number of requests to perform",
 	)
-	fs.IntVar(
-		&c.c,
+	fs.Var(asPositiveIntValue(&c.c),
 		"c",
-		1,
 		"Concurrency level: Number of multiple requests to make at a time",
 	)
-	fs.IntVar(
-		&c.rps,
+	fs.Var(asPositiveIntValue(&c.rps),
 		"rps",
-		0,
 		"Rate limit for requests per second (0 for no limit)",
 	)
 
