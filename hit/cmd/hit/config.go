@@ -5,7 +5,15 @@ import (
 	"flag"
 	"errors"
     "strconv"
+	"net/url"
 )
+
+type config struct {
+	url string
+	n   int
+	c   int
+	rps int
+}
 
 type positiveIntValue int
 
@@ -35,12 +43,23 @@ func (n *positiveIntValue) Set(s string) error {
 
 }
 
-type config struct {
-	url string
-	n   int
-	c   int
-	rps int
-}
+func validateArgs(c *config) error {
+    u, err := url.Parse(c.url)
+    if err != nil {
+        return fmt.Errorf("invalid value %q for url: %w", c.url, err)
+    }
+    if c.url == "" || u.Host == "" || u.Scheme == "" {
+        return fmt.Errorf(
+            "invalid value %q for url: requires a valid url", c.url,
+        )
+    }
+    if c.n < c.c {
+        return fmt.Errorf(
+            "invalid value %d for flag -n: should be greater than flag -c: %d", c.n, c.c,
+        )
+    }
+    return nil
+}  
 
 func parseArgs(c *config, args []string) error {
 	fs :=flag.NewFlagSet("hit", flag.ContinueOnError)
@@ -71,5 +90,11 @@ func parseArgs(c *config, args []string) error {
 		return err
 	}
 	c.url = fs.Arg(0)
+
+	if err := validateArgs(c); err != nil {
+		fmt.Fprintf(fs.Output(), "error: %s\n", err)
+		fs.Usage()
+		return err
+	}
 	return nil
 }
