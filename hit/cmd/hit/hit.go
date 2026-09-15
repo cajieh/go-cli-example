@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"io"
 )
 
 const logo = `
@@ -13,15 +14,49 @@ const logo = `
   \/_/\/_/   \/_/     \/_/`
 
 func main() {
-	c := config{
+    if err := run(&env{
+        stdout: os.Stdout,  
+        stderr: os.Stderr,   
+        args:   os.Args,   
+    }); err != nil {
+        os.Exit(1) 
+    }
+}
+
+func run(e *env) error {
+		c := config{
 		n: 100,
 		c: 1,
 	}
-	if err := parseArgs(&c, os.Args[1:]); err != nil {
-		os.Exit(1)
+
+	if err := parseArgs(
+		&c,
+		e.args[1:],
+		e.stderr,
+	); err != nil {
+		return err
 	}
-	fmt.Printf(
-		"%s\n\nSending %d requests to %q (concurrency: %d)\n",
-		logo, c.n, c.url, c.c,
-	)
+
+   fmt.Fprintf( 
+        e.stdout,  
+        "%s\n\nSending %d requests to %q (concurrency: %d)\n",
+        logo, c.n, c.url, c.c,
+    )
+if e.dryRun {  
+        return nil   
+    }   
+    if err := runHit(&c, e.stdout); err != nil {  
+        fmt.Fprintf(  
+            e.stderr,  
+            "\nerror occurred: %v\n",  
+            err,  
+        )  
+        return err  
+    }
+
+    return nil
 }
+
+func runHit(_ *config, _ io.Writer) error {  
+    return nil   
+} 

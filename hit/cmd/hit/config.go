@@ -6,7 +6,15 @@ import (
 	"errors"
     "strconv"
 	"net/url"
+	"io"
 )
+
+type env struct {
+    stdout io.Writer  
+    stderr io.Writer  
+    args   []string 
+    dryRun bool  
+}
 
 type config struct {
 	url string
@@ -61,8 +69,9 @@ func validateArgs(c *config) error {
     return nil
 }  
 
-func parseArgs(c *config, args []string) error {
+func parseArgs(c *config, args []string, stderr io.Writer) error {
 	fs :=flag.NewFlagSet("hit", flag.ContinueOnError)
+	fs.SetOutput(stderr)
 	fs.Usage = func() {
 		fmt.Fprintf(fs.Output(), "usage %s [options] url\n", fs.Name())
 		fs.PrintDefaults()
